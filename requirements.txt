@@ -1,0 +1,4 @@
+
+kivy==2.3.0
+requests
+huawei-lte-api==2.0.1
