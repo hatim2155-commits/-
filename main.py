@@ -51,31 +51,25 @@ class Hatim5GApp(App):
         self._signal_values: dict[str, dict[str, Label]] = {}
         self._cell_values: dict[str, Label] = {}
         self._font_name = self._register_arabic_font()
-
         saved_url = self._store.get("router").get("url", DEFAULT_ROUTER_URL) if self._store.exists("router") else DEFAULT_ROUTER_URL
         saved_auto = self._store.get("refresh").get("enabled", False) if self._store.exists("refresh") else False
         saved_interval = self._store.get("refresh").get("seconds", 30) if self._store.exists("refresh") else 30
-
         root = BoxLayout(orientation="vertical", padding=dp(12), spacing=dp(10))
         with root.canvas.before:
             from kivy.graphics import Color, Rectangle
-
             Color(*BACKGROUND)
             self._background_rect = Rectangle(pos=root.pos, size=root.size)
         root.bind(pos=self._update_background, size=self._update_background)
-
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(52), spacing=dp(8))
         title = self._label("HATIM 5G", 24, ACCENT, bold=True, halign="right")
         header.add_widget(title)
         self._refresh_button = self._button("تحديث الآن", self.refresh_signal, width=dp(122))
         header.add_widget(self._refresh_button)
         root.add_widget(header)
-
         self.status_label = self._label("لم يتم الاتصال بعد. اتصل بشبكة الراوتر ثم اختبر الاتصال.", 14, MUTED)
         self.status_label.size_hint_y = None
         self.status_label.height = dp(48)
         root.add_widget(self.status_label)
-
         self.tabs = TabbedPanel(do_default_tab=False, tab_width=dp(112), tab_height=dp(46), background_color=BACKGROUND)
         self.tabs.tab_pos = "top_right"
         self._add_home_tab()
@@ -91,7 +85,6 @@ class Hatim5GApp(App):
     def _register_arabic_font(self) -> str:
         from kivy.core.text import LabelBase
         from kivy.resources import resource_find
-
         font_path = resource_find("assets/fonts/NotoNaskhArabic.ttf")
         if not font_path or not os.path.isfile(font_path):
             raise FileNotFoundError("Arabic font is missing from the application package.")
@@ -103,34 +96,12 @@ class Hatim5GApp(App):
         self._background_rect.size = widget.size
 
     def _label(self, text: str, size: int = 16, color=FOREGROUND, bold=False, halign="right"):
-        label = Label(
-            text=rtl(text),
-            font_name=self._font_name,
-            font_size=dp(size),
-            color=color,
-            bold=bold,
-            halign=halign,
-            valign="middle",
-            size_hint_y=None,
-            height=dp(max(34, size * 2)),
-            text_size=(None, None),
-        )
+        label = Label(text=rtl(text), font_name=self._font_name, font_size=dp(size), color=color, bold=bold, halign=halign, valign="middle", size_hint_y=None, height=dp(max(34, size * 2)), text_size=(None, None))
         label.bind(size=lambda instance, _value: setattr(instance, "text_size", (instance.width - dp(8), None)))
         return label
 
     def _button(self, text: str, callback, width=None):
-        button = Button(
-            text=rtl(text),
-            font_name=self._font_name,
-            font_size=dp(15),
-            color=FOREGROUND,
-            background_normal="",
-            background_color=ACCENT,
-            size_hint_y=None,
-            height=dp(46),
-            size_hint_x=None if width else 1,
-            width=width or 0,
-        )
+        button = Button(text=rtl(text), font_name=self._font_name, font_size=dp(15), color=FOREGROUND, background_normal="", background_color=ACCENT, size_hint_y=None, height=dp(46), size_hint_x=None if width else 1, width=width or 0)
         button.bind(on_release=lambda *_args: callback())
         return button
 
@@ -145,22 +116,14 @@ class Hatim5GApp(App):
         return tab, content
 
     def _card(self, title: str, content: GridLayout, rows: list[BoxLayout]):
-        card = BoxLayout(
-            orientation="vertical",
-            padding=dp(12),
-            spacing=dp(8),
-            size_hint_y=None,
-            height=dp(54 + len(rows) * 48),
-        )
+        card = BoxLayout(orientation="vertical", padding=dp(12), spacing=dp(8), size_hint_y=None, height=dp(54 + len(rows) * 48))
         with card.canvas.before:
             from kivy.graphics import Color, RoundedRectangle
-
             Color(*SURFACE)
             card._surface = RoundedRectangle(pos=card.pos, size=card.size, radius=[dp(14)])
         card.bind(pos=lambda widget, _v: setattr(widget._surface, "pos", widget.pos))
         card.bind(size=lambda widget, _v: setattr(widget._surface, "size", widget.size))
-        heading = self._label(title, 17, ACCENT, bold=True)
-        card.add_widget(heading)
+        card.add_widget(self._label(title, 17, ACCENT, bold=True))
         for row in rows:
             card.add_widget(row)
         content.add_widget(card)
@@ -179,10 +142,7 @@ class Hatim5GApp(App):
         self.home_tab, content = self._new_tab("الرئيسية")
         intro = BoxLayout(orientation="vertical", padding=dp(14), spacing=dp(8), size_hint_y=None, height=dp(142))
         intro.add_widget(self._label("مراقبة اتصال وإشارة راوتر HATIM 5G", 19, ACCENT, bold=True))
-        intro.add_widget(self._label(
-            "يعرض التطبيق القراءات التي يرسلها الراوتر فقط. عدم ظهور قراءة لا يعني وجود إشارة وهمية.",
-            14, MUTED,
-        ))
+        intro.add_widget(self._label("يعرض التطبيق القراءات التي يرسلها الراوتر فقط. عدم ظهور قراءة لا يعني وجود إشارة وهمية.", 14, MUTED))
         content.add_widget(intro)
         content.add_widget(self._label("افتح تبويب الإعدادات لإدخال عنوان الراوتر وكلمة المرور، ثم اختبر الاتصال.", 14, FOREGROUND))
 
@@ -194,10 +154,7 @@ class Hatim5GApp(App):
             rows.append(self._row(metric, NOT_AVAILABLE, values))
         self._signal_values[key] = values
         self._card("قراءات " + title, content, rows)
-        content.add_widget(self._label(
-            "تظهر القيم بعد نجاح طلب بيانات حقيقي من الراوتر. قد لا يرسل الراوتر جميع الحقول.",
-            13, MUTED,
-        ))
+        content.add_widget(self._label("تظهر القيم بعد نجاح طلب بيانات حقيقي من الراوتر. قد لا يرسل الراوتر جميع الحقول.", 13, MUTED))
 
     def _add_cells_tab(self):
         _, content = self._new_tab("الأبراج القريبة")
@@ -205,63 +162,25 @@ class Hatim5GApp(App):
         for metric in ("معرّف الخلية", "PCI", "النطاق", "القناة", "نوع الشبكة"):
             rows.append(self._row(metric, NOT_AVAILABLE, self._cell_values))
         self._card("معلومات الخلية التي يرسلها الراوتر", content, rows)
-        content.add_widget(self._label(
-            "واجهة Huawei القياسية قد تعرض الخلية الحالية فقط. لا تُعرض أبراج مجاورة إلا إذا أعادها الراوتر فعليًا.",
-            13, MUTED,
-        ))
+        content.add_widget(self._label("واجهة Huawei القياسية قد تعرض الخلية الحالية فقط. لا تُعرض أبراج مجاورة إلا إذا أعادها الراوتر فعليًا.", 13, MUTED))
 
     def _add_settings_tab(self, saved_url: str, saved_auto: bool, saved_interval: int):
         _, content = self._new_tab("الإعدادات")
         content.add_widget(self._label("عنوان الراوتر", 15, ACCENT, bold=True))
-        self.address_input = TextInput(
-            text=saved_url,
-            hint_text="http://192.168.9.1",
-            multiline=False,
-            font_name=self._font_name,
-            size_hint_y=None,
-            height=dp(48),
-            foreground_color=FOREGROUND,
-            background_color=SURFACE,
-            cursor_color=ACCENT,
-            halign="left",
-        )
+        self.address_input = TextInput(text=saved_url, hint_text="http://192.168.9.1", multiline=False, font_name=self._font_name, size_hint_y=None, height=dp(48), foreground_color=FOREGROUND, background_color=SURFACE, cursor_color=ACCENT, halign="left")
         content.add_widget(self.address_input)
         content.add_widget(self._label("كلمة مرور حساب الراوتر (لا تُحفظ على الجهاز)", 14, ACCENT, bold=True))
-        self.password_input = TextInput(
-            password=True,
-            multiline=False,
-            hint_text=rtl("كلمة المرور"),
-            font_name=self._font_name,
-            size_hint_y=None,
-            height=dp(48),
-            foreground_color=FOREGROUND,
-            background_color=SURFACE,
-            cursor_color=ACCENT,
-            halign="left",
-        )
+        self.password_input = TextInput(password=True, multiline=False, hint_text=rtl("كلمة المرور"), font_name=self._font_name, size_hint_y=None, height=dp(48), foreground_color=FOREGROUND, background_color=SURFACE, cursor_color=ACCENT, halign="left")
         content.add_widget(self.password_input)
         content.add_widget(self._button("اختبار الاتصال وقراءة الإشارة", self.test_connection))
-
         auto_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(46), spacing=dp(8))
         self.auto_switch = Switch(active=bool(saved_auto))
         self.auto_switch.bind(active=lambda _switch, active: self._set_auto_refresh(active, self._interval_value(), persist=True))
         auto_row.add_widget(self.auto_switch)
         auto_row.add_widget(self._label("تحديث تلقائي", 15))
         content.add_widget(auto_row)
-
         interval_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(46), spacing=dp(8))
-        self.interval_input = TextInput(
-            text=str(saved_interval),
-            hint_text="30",
-            multiline=False,
-            input_filter="int",
-            font_name=self._font_name,
-            size_hint_x=None,
-            width=dp(88),
-            foreground_color=FOREGROUND,
-            background_color=SURFACE,
-            halign="center",
-        )
+        self.interval_input = TextInput(text=str(saved_interval), hint_text="30", multiline=False, input_filter="int", font_name=self._font_name, size_hint_x=None, width=dp(88), foreground_color=FOREGROUND, background_color=SURFACE, halign="center")
         interval_row.add_widget(self.interval_input)
         interval_row.add_widget(self._label("الفاصل بالثواني (10–3600)", 14, MUTED))
         content.add_widget(interval_row)
@@ -289,9 +208,7 @@ class Hatim5GApp(App):
             self._refresh_event.cancel()
             self._refresh_event = None
         if active:
-            self._refresh_event = Clock.schedule_interval(
-                lambda _dt: self.refresh_signal(), max(10, min(3600, int(seconds)))
-            )
+            self._refresh_event = Clock.schedule_interval(lambda _dt: self.refresh_signal(), max(10, min(3600, int(seconds))))
         if persist and hasattr(self, "_store"):
             self._store.put("refresh", enabled=bool(active), seconds=max(10, min(3600, int(seconds))))
 
@@ -327,20 +244,15 @@ class Hatim5GApp(App):
             Clock.schedule_once(lambda _dt, message=str(exc): self._show_error(message), 0)
         except Exception:
             logging.getLogger(__name__).exception("Unexpected router read failure")
-            Clock.schedule_once(
-                lambda _dt: self._show_error("حدث خطأ غير متوقع أثناء الاتصال. أعد المحاولة وتحقق من سجل التطبيق."),
-                0,
-            )
+            Clock.schedule_once(lambda _dt: self._show_error("حدث خطأ غير متوقع أثناء الاتصال. أعد المحاولة وتحقق من سجل التطبيق."), 0)
 
     def _show_reading(self, reading, test: bool):
         for technology in ("4G LTE", "5G NR"):
             available = reading.signal.get(technology, {})
             for metric, label in self._signal_values[technology].items():
                 label.text = rtl(available.get(metric, NOT_AVAILABLE))
-
         for label, value in self._cell_values.items():
             label.text = rtl(reading.cell_info.get(label, "غير متاح: لم يرسل الراوتر بيانات الخلية"))
-
         self._busy = False
         self._refresh_button.disabled = False
         if reading.login_verified:
