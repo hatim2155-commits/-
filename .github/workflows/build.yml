@@ -73,26 +73,45 @@ jobs:
         run: |
           yes | buildozer android debug
 
-      - name: Locate and verify APK
+      - name: Stage APK for download
+        id: stage_apk
         run: |
           mkdir -p dist
-          mapfile -t apks < <(find . -type f -name '*.apk' \
+          apk="$(find . -type f -name '*.apk' \
             -not -path './.git/*' \
             -not -path './dist/*' \
-            -print)
-          if [ "${#apks[@]}" -eq 0 ]; then
+            -print -quit)"
+          if [ -z "$apk" ]; then
             echo "No APK was found anywhere in the workspace after Buildozer completed."
             find . -type f \( -name '*.apk' -o -name '*.aab' \) -print
             exit 1
           fi
-          printf 'Found APK: %s\n' "${apks[0]}"
-          cp "${apks[0]}" dist/HATIM5G-debug.apk
+          echo "Found APK: $apk"
+          cp "$apk" dist/HATIM5G-debug.apk
           test -s dist/HATIM5G-debug.apk
-          unzip -Z1 dist/HATIM5G-debug.apk > dist/apk-contents.txt
-          grep -F 'NotoNaskhArabic.ttf' dist/apk-contents.txt
+
+      - name: Verify Arabic font in packaged app data
+        run: |
+          if ! unzip -p dist/HATIM5G-debug.apk assets/private.tar > dist/private.tar; then
+            echo "Could not extract assets/private.tar from the APK."
+            exit 1
+          fi
+          if [ ! -s dist/private.tar ]; then
+            echo "APK does not contain a non-empty assets/private.tar."
+            exit 1
+          fi
+          if ! tar -tzf dist/private.tar > dist/app-contents.txt; then
+            echo "Could not read the packaged app data archive."
+            exit 1
+          fi
+          if ! grep -Fq 'assets/fonts/NotoNaskhArabic.ttf' dist/app-contents.txt; then
+            echo "Arabic font is missing from assets/private.tar. Packaged font files:"
+            grep -Ei '\.ttf$|NotoNaskh' dist/app-contents.txt || true
+            exit 1
+          fi
 
       - name: Upload APK
-        if: success()
+        if: always() && steps.stage_apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: HATIM5G-debug-apk
