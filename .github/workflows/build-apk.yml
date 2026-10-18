@@ -12,6 +12,8 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      - name: Build APK with Flet
+      run: flet build apk --yes
 
     - name: Set up Python
       uses: actions/setup-python@v5
