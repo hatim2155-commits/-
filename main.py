@@ -2,18 +2,11 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.metrics import dp
-from kivy.core.window import Window
-from kivy.utils import platform
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
-from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
 import threading
 import urllib.request
 import urllib.error
-import json
+import xml.etree.ElementTree as ET
 
 APP_NAME = "HATIM 5G"
 
@@ -33,81 +26,49 @@ BoxLayout:
     Label:
         text: "[b]HATIM 5G[/b]"
         markup: True
-        font_size: "30sp"
+        font_size: "28sp"
         color: (0.1, 0.48, 1, 1)
         size_hint_y: None
-        height: dp(54)
+        height: dp(50)
 
     Label:
-        text: "إدارة راوتر هواوي"
-        font_size: "20sp"
+        text: "قراءة إشارات راوتر هواوي"
+        font_size: "18sp"
         color: (1, 1, 1, 1)
         size_hint_y: None
-        height: dp(38)
+        height: dp(36)
 
-    BoxLayout:
+    TextInput:
+        id: router_ip
+        text: "192.168.9.1"
+        hint_text: "عنوان الراوتر"
+        multiline: False
         size_hint_y: None
         height: dp(48)
-        spacing: dp(8)
 
-        Label:
-            text: "عنوان الراوتر"
-            size_hint_x: .42
-            color: (1, 1, 1, 1)
-
-        TextInput:
-            id: router_ip
-            text: "192.168.8.1"
-            multiline: False
-            input_type: "url"
-            size_hint_x: .58
-
-    BoxLayout:
+    TextInput:
+        id: router_password
+        password: True
+        multiline: False
+        hint_text: "كلمة مرور صفحة الراوتر"
         size_hint_y: None
         height: dp(48)
-        spacing: dp(8)
-
-        Label:
-            text: "كلمة المرور"
-            size_hint_x: .42
-            color: (1, 1, 1, 1)
-
-        TextInput:
-            id: router_password
-            password: True
-            multiline: False
-            hint_text: "كلمة مرور الراوتر"
-            size_hint_x: .58
 
     Button:
-        text: "اختبار الاتصال"
+        text: "قراءة الإشارة"
         size_hint_y: None
-        height: dp(50)
-        background_normal: ""
-        background_color: (0.05, 0.32, 0.85, 1)
-        on_release: app.test_connection()
+        height: dp(48)
+        on_release: app.read_signal()
 
     Label:
         id: status
-        text: "أدخل عنوان الراوتر ثم اختبر الاتصال"
+        text: "اتصل بشبكة الراوتر ثم اضغط قراءة الإشارة"
         color: (0.8, 0.85, 0.95, 1)
         size_hint_y: None
-        height: dp(52)
-        halign: "center"
-        valign: "middle"
+        height: dp(65)
         text_size: self.width, None
 
-    Label:
-        text: "[b]معلومات الإشارة[/b]"
-        markup: True
-        font_size: "20sp"
-        color: (1, 1, 1, 1)
-        size_hint_y: None
-        height: dp(40)
-
     ScrollView:
-        do_scroll_x: False
-
         GridLayout:
             id: readings
             cols: 1
@@ -120,70 +81,135 @@ class Hatim5GApp(App):
     def build(self):
         self.title = APP_NAME
         self.root_widget = Builder.load_string(KV)
-        self.add_reading("حالة الاتصال", "لم يتم الاختبار بعد")
-        self.add_reading("RSRP", "—")
-        self.add_reading("RSRQ", "—")
-        self.add_reading("SINR", "—")
-        self.add_reading("PCI", "—")
-        self.add_reading("التردد / النطاق", "—")
+        self.values = {}
+        for name in (
+            "LTE RSRP", "LTE RSRQ", "LTE SINR", "LTE PCI",
+            "NR RSRP", "NR RSRQ", "NR SINR", "NR PCI",
+            "LTE Band", "NR Band"
+        ):
+            self.add_reading(name)
         return self.root_widget
 
-    def add_reading(self, name, value):
+    def add_reading(self, name):
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.label import Label
+
         row = BoxLayout(
             orientation="horizontal",
             size_hint_y=None,
-            height=dp(44),
-            spacing=dp(8)
+            height=dp(40)
         )
         key = Label(
-            text=name,
-            color=(0.35, 0.65, 1, 1),
-            halign="right"
+            text=name, color=(0.35, 0.65, 1, 1)
         )
-        val = Label(
-            text=value,
-            color=(1, 1, 1, 1),
-            halign="left"
-        )
+        value = Label(text="—", color=(1, 1, 1, 1))
         row.add_widget(key)
-        row.add_widget(val)
+        row.add_widget(value)
         self.root_widget.ids.readings.add_widget(row)
-        return val
+        self.values[name] = value
 
-    def test_connection(self):
+    def read_signal(self):
         ip = self.root_widget.ids.router_ip.text.strip()
         if not ip:
-            self.root_widget.ids.status.text = "أدخل عنوان الراوتر أولًا"
+            self.root_widget.ids.status.text = "أدخل عنوان الراوتر"
             return
 
-        self.root_widget.ids.status.text = "جارٍ اختبار صفحة الراوتر..."
+        self.root_widget.ids.status.text = "جارٍ الاتصال وطلب بيانات الإشارة..."
         threading.Thread(
-            target=self._check_router,
+            target=self._fetch_signal,
             args=(ip,),
             daemon=True
         ).start()
 
-    def _check_router(self, ip):
-        url = "http://" + ip + "/"
-        try:
-            request = urllib.request.Request(
-                url,
-                headers={"User-Agent": "HATIM5G/1.0"}
-            )
-            with urllib.request.urlopen(request, timeout=5) as response:
-                code = response.status
-                result = f"تم الوصول إلى صفحة الراوتر (HTTP {code})"
-        except urllib.error.HTTPError as exc:
-            result = f"وصلنا للراوتر؛ استجاب برمز HTTP {exc.code}"
-        except Exception as exc:
-            result = "تعذر الاتصال: تأكد من الشبكة وعنوان الراوتر"
+    def _get(self, url, headers=None, timeout=8):
+        req = urllib.request.Request(
+            url,
+            headers=headers or {
+                "User-Agent": "HATIM5G/1.0",
+                "X-Requested-With": "XMLHttpRequest",
+                "Accept": "application/xml"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return response.read().decode("utf-8", errors="replace")
 
-        Clock.schedule_once(
-            lambda dt: self._show_status(result),
-            0
+    def _fetch_signal(self, ip):
+        base = "http://" + ip.rstrip("/")
+        try:
+            # يطلب رمز التحقق كما يفعل سكربت المتصفح الأصلي.
+            token_xml = self._get(base + "/api/webserver/token")
+            token_root = ET.fromstring(token_xml)
+            token_node = token_root.find(".//token")
+
+            if token_node is None or not token_node.text:
+                raise RuntimeError(
+                    "الراوتر لم يُرجع رمز التحقق. قد يتطلب تسجيل الدخول أولًا."
+                )
+
+            token = token_node.text.strip()
+            headers = {
+                "User-Agent": "HATIM5G/1.0",
+                "X-Requested-With": "XMLHttpRequest",
+                "Accept": "application/xml",
+                "__RequestVerificationToken": token
+            }
+
+            signal_xml = self._get(
+                base + "/api/device/signal",
+                headers=headers
+            )
+            root = ET.fromstring(signal_xml)
+
+            aliases = {
+                "LTE RSRP": ("lte_rsrp", "rsrp"),
+                "LTE RSRQ": ("lte_rsrq", "rsrq"),
+                "LTE SINR": ("lte_sinr", "lte_snr", "sinr"),
+                "LTE PCI": ("lte_pci", "pci"),
+                "NR RSRP": ("nr_rsrp", "nrrsrp"),
+                "NR RSRQ": ("nr_rsrq", "nrrsrq"),
+                "NR SINR": ("nr_sinr", "nrsinr"),
+                "NR PCI": ("nr_pci",),
+                "LTE Band": ("lte_band", "band"),
+                "NR Band": ("nr_band", "nrbands")
+            }
+
+            found = {}
+            for label, names in aliases.items():
+                for name in names:
+                    node = root.find(".//" + name)
+                    if node is not None and node.text:
+                        found[label] = node.text.strip()
+                        break
+
+            if not found:
+                raise RuntimeError(
+                    "وصل رد من الراوتر، لكن أسماء حقول الإشارة لم تطابق المتوقع."
+                )
+
+            Clock.schedule_once(
+                lambda dt: self._show_results(found), 0
+            )
+
+        except urllib.error.HTTPError as exc:
+            message = f"رفض الراوتر الطلب: HTTP {exc.code}"
+            Clock.schedule_once(
+                lambda dt, m=message: self._show_error(m), 0
+            )
+        except Exception as exc:
+            message = f"تعذر قراءة الإشارة: {exc}"
+            Clock.schedule_once(
+                lambda dt, m=message: self._show_error(m), 0
+            )
+
+    def _show_results(self, found):
+        for label, widget in self.values.items():
+            widget.text = found.get(label, "غير متوفر في الرد")
+        self.root_widget.ids.status.text = (
+            "وصل رد الإشارة. راجع القيم المعروضة؛ "
+            "الحقول غير المتوفرة قد تحتاج أسماء مختلفة في إصدار الراوتر."
         )
 
-    def _show_status(self, message):
+    def _show_error(self, message):
         self.root_widget.ids.status.text = message
 
 if __name__ == "__main__":
