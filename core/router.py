@@ -67,7 +67,7 @@ class HuaweiRouter:
         try:
             response = self.session.request(
                 method,
-                f"{self.base_url}/{path.lstrip('/')} ".strip(),
+                f"{self.base_url}/{path.lstrip('/')}",
                 headers=headers,
                 timeout=self.timeout,
                 **kwargs,
@@ -155,7 +155,7 @@ class HuaweiRouter:
         except (TypeError, ValueError) as exc:
             raise RouterLoginError("رد حالة تسجيل الدخول غير مفهوم.") from exc
 
-        if state == "0":
+        if state == "1":
             return True
         if not self.tokens:
             raise RouterLoginError("لم يُرجع الراوتر رمز حماية صالحًا لتسجيل الدخول.")
