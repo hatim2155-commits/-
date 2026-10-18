@@ -1,4 +1,4 @@
-
 kivy==2.3.0
 requests
-huawei-lte-api==2.0.1
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
