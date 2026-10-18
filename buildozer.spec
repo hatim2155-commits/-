@@ -5,6 +5,7 @@ package.domain = com.hatim
 
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,txt,json,xml
+source.include_patterns = assets/fonts/*
 source.exclude_dirs = tests,.git,.buildozer,bin
 
 version = 0.1.0
