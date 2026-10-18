@@ -14,8 +14,6 @@ requirements = python3,kivy==2.3.0,requests
 orientation = portrait
 fullscreen = 0
 
-icon.filename = %(source.dir)s/assets/icon.png
-
 android.permissions = INTERNET
 android.api = 33
 android.minapi = 24
