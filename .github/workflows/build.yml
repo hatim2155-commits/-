@@ -73,18 +73,29 @@ jobs:
         run: |
           yes | buildozer android debug
 
-      - name: Verify Arabic font is packaged
+      - name: Locate and verify APK
         run: |
-          apk="$(find bin -maxdepth 1 -name '*.apk' -print -quit)"
-          test -n "$apk"
-          unzip -Z1 "$apk" > apk-contents.txt
-          grep -F 'NotoNaskhArabic.ttf' apk-contents.txt
+          mkdir -p dist
+          mapfile -t apks < <(find . -type f -name '*.apk' \
+            -not -path './.git/*' \
+            -not -path './dist/*' \
+            -print)
+          if [ "${#apks[@]}" -eq 0 ]; then
+            echo "No APK was found anywhere in the workspace after Buildozer completed."
+            find . -type f \( -name '*.apk' -o -name '*.aab' \) -print
+            exit 1
+          fi
+          printf 'Found APK: %s\n' "${apks[0]}"
+          cp "${apks[0]}" dist/HATIM5G-debug.apk
+          test -s dist/HATIM5G-debug.apk
+          unzip -Z1 dist/HATIM5G-debug.apk > dist/apk-contents.txt
+          grep -F 'NotoNaskhArabic.ttf' dist/apk-contents.txt
 
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: HATIM5G-debug-apk
-          path: bin/*.apk
+          path: dist/HATIM5G-debug.apk
           if-no-files-found: error
           retention-days: 7
