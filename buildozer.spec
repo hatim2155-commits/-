@@ -19,10 +19,10 @@ icon.filename = %(source.dir)s/assets/icon.png
 android.permissions = INTERNET
 android.api = 33
 android.minapi = 24
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 
 p4a.bootstrap = sdl2
-p4a.branch = v2024.01.21
+p4a.branch = develop
 
 [buildozer]
 log_level = 2
