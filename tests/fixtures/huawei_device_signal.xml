@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+    <rsrp>-96dBm</rsrp>
+    <rsrq>-11dB</rsrq>
+    <sinr>17dB</sinr>
+    <pci>123</pci>
+    <band>3</band>
+    <earfcn>1650</earfcn>
+    <cell_id>12345678</cell_id>
+    <nr_rsrp>-88dBm</nr_rsrp>
+    <nr_rsrq>-9dB</nr_rsrq>
+    <nr_sinr>21dB</nr_sinr>
+    <nr_pci>321</nr_pci>
+    <nr_band>n78</nr_band>
+    <nr_arfcn>640000</nr_arfcn>
+</response>
