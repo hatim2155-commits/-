@@ -1,15 +1,15 @@
-
 [app]
 title = HATIM 5G
 package.name = hatim5g
 package.domain = com.hatim
 
 source.dir = .
-source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,txt,json
+source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,txt,json,xml
+source.exclude_dirs = tests,.git,.buildozer,bin
 
 version = 0.1.0
 
-requirements = python3,kivy==2.3.0,requests
+requirements = python3,kivy==2.3.0,requests,arabic-reshaper==3.0.0,python-bidi==0.4.2
 
 orientation = portrait
 fullscreen = 0
